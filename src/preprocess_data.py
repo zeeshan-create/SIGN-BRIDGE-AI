@@ -31,7 +31,7 @@ for label_folder in os.listdir(input_dir):
         result = hands.process(image_rgb)
 
         if result.multi_hand_landmarks:
-            
+            # Code to extract hand region
             for hand_landmarks in result.multi_hand_landmarks:
                 h, w, c = image.shape
                 x_min = min([lm.x for lm in hand_landmarks.landmark]) * w
@@ -39,23 +39,24 @@ for label_folder in os.listdir(input_dir):
                 x_max = max([lm.x for lm in hand_landmarks.landmark]) * w
                 y_max = max([lm.y for lm in hand_landmarks.landmark]) * h
 
-                
                 margin = 20
                 x_min = max(0, int(x_min - margin))
                 y_min = max(0, int(y_min - margin))
                 x_max = min(w, int(x_max + margin))
                 y_max = min(h, int(y_max + margin))
 
-                # Crop and resize the hand region
                 hand_image = image[y_min:y_max, x_min:x_max]
                 hand_image_resized = cv2.resize(hand_image, image_size)
 
-                # Save the processed image
                 output_file = os.path.join(output_path, image_file)
                 cv2.imwrite(output_file, hand_image_resized)
-                print(f"Processed and saved: {output_file}")
+                print(f"Processed and saved (Hand Detected): {output_file}")
         else:
-            print(f"No hand detected in {image_file}, skipping...")
+            # Fallback: Save resized image even if no hand detected (for testing pipeline)
+            hand_image_resized = cv2.resize(image, image_size)
+            output_file = os.path.join(output_path, image_file)
+            cv2.imwrite(output_file, hand_image_resized)
+            print(f"No hand detected in {image_file}, saving resized image as fallback.")
 
 # Release Mediapipe resources
 hands.close()

@@ -1,0 +1,67 @@
+﻿d:\Antigravity\.venv\Scrip
+ts\python.exe : WARNING: 
+All log messages before 
+absl::InitializeLog() is 
+called are written to 
+STDERR
+At line:1 char:1
++ d:\Antigravity\.venv\Scr
+ipts\python.exe 
+src\test_mp.py > 
+output.txt 2 ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (W  
+  ARNING: All lo...itte   
+ n to STDERR:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+I0000 
+00:00:1775967532.882895   
+ 3392 port.cc:153] oneDNN 
+custom operations are on. 
+You may see slightly 
+different numerical 
+results due to 
+floating-point round-off 
+errors from different 
+computation orders. To 
+turn them off, set the 
+environment variable 
+`TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages 
+before 
+absl::InitializeLog() is 
+called are written to 
+STDERR
+I0000 
+00:00:1775967534.427209   
+ 3392 port.cc:153] oneDNN 
+custom operations are on. 
+You may see slightly 
+different numerical 
+results due to 
+floating-point round-off 
+errors from different 
+computation orders. To 
+turn them off, set the 
+environment variable 
+`TF_ENABLE_ONEDNN_OPTS=0`.
+Mediapipe version: 0.10.33
+Traceback (most recent 
+call last):
+  File "D:\Antigravity\ASL
+-Detection\src\test_mp.py"
+, line 3, in <module>
+    print(f"Hands: 
+{mp.solutions.hands}")
+                    
+^^^^^^^^^^^^
+AttributeError: module 
+'mediapipe' has no 
+attribute 'solutions'

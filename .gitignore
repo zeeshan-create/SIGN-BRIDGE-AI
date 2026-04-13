@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Data (Excluded from Git due to size - keep raw images elsewhere)
+data/
+external_data/
+processed_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Models
+# We keep .tflite and .json as they are the product
+# .keras and large .h5 might be excluded if > 100MB
+# models/*.keras
+
+# Media
+asl_posters/

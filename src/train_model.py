@@ -1,71 +1,116 @@
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dropout, GlobalAveragePooling2D, Dense
-from tensorflow.keras.callbacks import ReduceLROnPlateau
-from tensorflow.keras.applications import VGG16
-from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dropout, GlobalAveragePooling2D, Dense, BatchNormalization
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import os
 
-# dataset path
-input_dir = './processed_data'
-batch_size = 32
-image_size = (224, 224)
+# Dataset Path
+INPUT_DIR = './processed_data'
+MODEL_SAVE_PATH = './models/asl_model.h5'
+BATCH_SIZE = 32
+IMAGE_SIZE = (224, 224)
+EPOCHS = 10
 
-# load dataset and retrieve class names
-train_data = tf.keras.utils.image_dataset_from_directory(
-    input_dir,
-    validation_split=0.2,
+# Optimized Dataset Loading with Augmentation
+# Note: Augmentation is crucial for "perfecting" the model!
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.15,
+    zoom_range=0.15,
+    horizontal_flip=True, # ASL gestures are hand-specific, but augmentation helps robustness
+    validation_split=0.2
+)
+
+# Load training and validation datasets
+train_generator = train_datagen.flow_from_directory(
+    INPUT_DIR,
+    target_size=IMAGE_SIZE,
+    batch_size=BATCH_SIZE,
+    class_mode='sparse',
     subset='training',
-    seed=123,
-    image_size=image_size,
-    batch_size=batch_size
+    shuffle=True,
+    seed=123
 )
 
-val_data = tf.keras.utils.image_dataset_from_directory(
-    input_dir,
-    validation_split=0.2,
+val_generator = train_datagen.flow_from_directory(
+    INPUT_DIR,
+    target_size=IMAGE_SIZE,
+    batch_size=BATCH_SIZE,
+    class_mode='sparse',
     subset='validation',
-    seed=123,
-    image_size=image_size,
-    batch_size=batch_size
+    shuffle=False,
+    seed=123
 )
 
-class_names = train_data.class_names  
+class_names = list(train_generator.class_indices.keys())
+print(f"Detected Classes: {class_names}")
+if len(class_names) == 0:
+    print("Error: No classes found in processed_data! Check directory structure.")
+    exit(1)
+print(f"Number of training samples: {train_generator.samples}")
+print(f"Number of validation samples: {val_generator.samples}")
 
-# normalize the data
-normalization_layer = tf.keras.layers.Rescaling(1./255)
-train_data = train_data.map(lambda x, y: (normalization_layer(x), y))
-val_data = val_data.map(lambda x, y: (normalization_layer(x), y))
+# --- IMPROVED ARCHITECTURE: MobileNetV2 ---
+# Using MobileNetV2 for faster inference and better performance in real-time.
+base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=IMAGE_SIZE + (3,))
 
-# optimize data loading
-train_data = train_data.cache().shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)
-val_data = val_data.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
+# Fine-tuning: Freeze initial layers, unfreeze the top-level blocks
+for layer in base_model.layers[:-15]:
+    layer.trainable = False
 
-# load pre-trained VGG16 model without the top layer
-base_model = VGG16(weights='imagenet', include_top=False, input_shape=image_size + (3,))
+# Add head layers
+x = base_model.output
+x = GlobalAveragePooling2D()(x)
+x = BatchNormalization()(x)
+x = Dense(256, activation='relu')(x)
+x = Dropout(0.4)(x)
+x = Dense(128, activation='relu')(x)
+x = Dropout(0.2)(x)
+output = Dense(len(class_names), activation='softmax')(x)
 
-# unfreeze some layers for fine-tuning
-for layer in base_model.layers[-4:]:
-    layer.trainable = True
+model = Model(inputs=base_model.input, outputs=output)
 
-model = Sequential([
-    base_model,  #VGG16 model
-    GlobalAveragePooling2D(),
-    Dropout(0.3),  
-    Dense(128, activation='relu'),
-    Dropout(0.3),  
-    Dense(len(class_names), activation='softmax')  
-])
+model.compile(
+    optimizer=Adam(learning_rate=0.0005), 
+    loss='sparse_categorical_crossentropy', 
+    metrics=['accuracy']
+)
 
-model.compile(optimizer=SGD(learning_rate=0.001, momentum=0.9), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+# Callbacks for better training
+lr_scheduler = ReduceLROnPlateau(
+    monitor='val_loss', 
+    patience=3, 
+    factor=0.5, 
+    min_lr=1e-7, 
+    verbose=1
+)
 
-lr_scheduler = ReduceLROnPlateau(monitor='val_loss', patience=3, factor=0.5, min_lr=1e-6)
+early_stopping = EarlyStopping(
+    monitor='val_loss', 
+    patience=10, 
+    restore_best_weights=True,
+    verbose=1
+)
+
+# --- TRAINING ---
+print("Training specialized MobileNetV2 Model...")
+
+if not os.path.exists('./models'):
+    os.makedirs('./models')
 
 history = model.fit(
-    train_data,
-    validation_data=val_data,
-    epochs=50,
-    callbacks=[lr_scheduler]
+    train_generator,
+    validation_data=val_generator,
+    epochs=EPOCHS,
+    callbacks=[lr_scheduler, early_stopping]
 )
 
-
-model.save('./models/asl_model.h5')
+# Final Save
+model.save(MODEL_SAVE_PATH)
+print(f"Success! Perfected model saved to: {MODEL_SAVE_PATH}")

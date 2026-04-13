@@ -1,0 +1,16 @@
+opencv-python
+mediapipe
+tensorflow
+numpy
+gTTS
+pygame
+scikit-learn
+matplotlib
+SpeechRecognition
+moviepy
+beautifulsoup4
+requests
+pyttsx3
+pysrt
+pytube
+pyaudio
