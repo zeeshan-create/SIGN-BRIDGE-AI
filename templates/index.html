@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignBridge AI | Intelligent Sign Interpretation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --text-main: #000000;
+            --text-muted: #64748b;
+            --bg-body: #ffffff;
+            --bg-tag: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        /* --- Navigation --- */
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: #000;
+        }
+
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .nav-link:hover { color: #000; }
+
+        .btn-try {
+            background: var(--primary);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            max-width: 1000px;
+            margin: 80px auto;
+            text-align: center;
+            padding: 0 40px;
+        }
+
+        .badge-ai {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #eff6ff;
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 40px;
+            border: 1px solid #dbeafe;
+        }
+
+        h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: -3px;
+            margin-bottom: 40px;
+        }
+
+        .hero-sub {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+
+        .btn-main {
+            background: var(--primary);
+            color: #fff;
+            padding: 18px 36px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.2s;
+        }
+        .btn-main:hover { transform: translateY(-2px); }
+
+        /* --- Technology Stack --- */
+        .tech-section {
+            border-top: 1px solid var(--border);
+            padding: 100px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tech-label {
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+            display: block;
+        }
+
+        .tech-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 60px;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: flex-start;
+        }
+
+        .tech-tag {
+            background: var(--bg-tag);
+            border: 1px solid var(--border);
+            padding: 12px 28px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 3.5rem; letter-spacing: -1px; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="logo">
+            <span class="logo-icon">👋</span>
+            SignBridge AI
+        </a>
+        <div class="nav-links">
+            <a href="#" class="nav-link">Features</a>
+            <a href="#" class="nav-link">How It Works</a>
+            <a href="#" class="nav-link">Technology</a>
+            <a href="#" class="nav-link">Research</a>
+            <a href="#" class="nav-link">About</a>
+            <a href="/demo" class="btn-try">Try Demo</a>
+        </div>
+    </nav>
+
+    <main class="hero">
+        <div class="badge-ai">
+            <span>⚡</span>
+            AI-Powered Communication
+        </div>
+        <h1>AI-Based Sign Language Interpreter</h1>
+        <p class="hero-sub">
+            Bridging communication gaps through intelligent vision systems. 
+            Real-time interpretation powered by deep learning.
+        </p>
+        <a href="/demo" class="btn-main">
+            Start Live Interpreter
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+        </a>
+    </main>
+
+    <section class="tech-section">
+        <span class="tech-label">Technology Stack</span>
+        <h2 class="tech-title">Built with Industry-Leading Tools</h2>
+        <div class="tech-tags">
+            <div class="tech-tag">PyTorch</div>
+            <div class="tech-tag">MediaPipe</div>
+            <div class="tech-tag">OpenCV</div>
+            <div class="tech-tag">FastAPI</div>
+            <div class="tech-tag">Docker</div>
+            <div class="tech-tag">React</div>
+            <div class="tech-tag">WebRTC</div>
+            <div class="tech-tag">TensorFlow</div>
+        </div>
+    </section>
+
+</body>
+</html>

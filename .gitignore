@@ -16,6 +16,11 @@ processed_data/
 .DS_Store
 Thumbs.db
 
+# Node.js
+node_modules/
+web/node_modules/
+server/node_modules/
+
 # Models
 # We keep .tflite and .json as they are the product
 # .keras and large .h5 might be excluded if > 100MB

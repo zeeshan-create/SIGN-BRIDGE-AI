@@ -16,13 +16,15 @@ import time
 import os
 import json
 
+from pathlib import Path
+
 # ─── Paths ────────────────────────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(BASE_DIR)
-MODELS_DIR = os.path.join(PROJECT_DIR, 'models')
-TFLITE_PATH = os.path.join(MODELS_DIR, 'landmark_model.tflite')
-KERAS_PATH = os.path.join(MODELS_DIR, 'landmark_model.keras')
-LABEL_MAP_PATH = os.path.join(MODELS_DIR, 'label_map.json')
+BASE_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = BASE_DIR.parent
+MODELS_DIR = PROJECT_DIR / 'models'
+TFLITE_PATH = MODELS_DIR / 'landmark_model.tflite'
+KERAS_PATH = MODELS_DIR / 'landmark_model.keras'
+LABEL_MAP_PATH = MODELS_DIR / 'label_map.json'
 
 # ─── Label Loading ────────────────────────────────────────────────────
 def load_labels():
@@ -30,10 +32,16 @@ def load_labels():
     try:
         with open(LABEL_MAP_PATH, 'r') as f:
             labels = json.load(f)['labels']
-        print(f"[Labels] Loaded {len(labels)} signs: {', '.join(labels)}")
+        print(f"[Labels] Loaded {len(labels)} signs from {LABEL_MAP_PATH}")
         return labels
     except FileNotFoundError:
-        print(f"[Error] {LABEL_MAP_PATH} not found. Run training first.")
+        print(f"[Error] {LABEL_MAP_PATH} not found. Checking src fallback...")
+        fallback = BASE_DIR / "label_map.json"
+        if fallback.exists():
+            with open(fallback, 'r') as f:
+                labels = json.load(f)['labels']
+            return labels
+        print(f"[Critical] No label map found. Run training first.")
         raise SystemExit(1)
     except (json.JSONDecodeError, KeyError) as e:
         print(f"[Error] Malformed label_map.json: {e}")
@@ -112,10 +120,10 @@ class InferenceEngine:
 
     def _load(self):
         # Prefer TFLite for ~5-10x faster inference
-        if os.path.exists(TFLITE_PATH):
+        if TFLITE_PATH.exists():
             try:
                 import tensorflow as tf
-                self._interpreter = tf.lite.Interpreter(model_path=TFLITE_PATH)
+                self._interpreter = tf.lite.Interpreter(model_path=str(TFLITE_PATH))
                 self._interpreter.allocate_tensors()
                 self._input_details = self._interpreter.get_input_details()
                 self._output_details = self._interpreter.get_output_details()
@@ -127,10 +135,10 @@ class InferenceEngine:
                 print(f"[Engine] TFLite load failed ({e}), falling back to Keras")
 
         # Fallback to Keras
-        if os.path.exists(KERAS_PATH):
+        if KERAS_PATH.exists():
             try:
                 import tensorflow as tf
-                self._keras_model = tf.keras.models.load_model(KERAS_PATH)
+                self._keras_model = tf.keras.models.load_model(str(KERAS_PATH))
                 input_shape = self._keras_model.input_shape
                 print(f"[Engine] Keras model loaded (input shape: {input_shape})")
             except Exception as e:
@@ -200,6 +208,9 @@ class ASLInterpreter:
         self.mode = self.MODES[self.mode_idx]
         self.history = deque(maxlen=10)
         self.sentence = []
+        self.current_word = [] # Support for bridge manual input
+        self.last_pred = ""     # For bridge display
+        self.history_length = 10 # Explicitly set for bridge logic
         self.last_spoken_time = 0
         self.confidence_threshold = 0.30
 

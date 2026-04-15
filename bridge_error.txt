@@ -1,0 +1,79 @@
+﻿python : C:\Users\ASUS\AppData\
+Local\Packages\PythonSoftwareFo
+undation.Python.3.11_qbz5n2kfra
+8p0\LocalCache\local-packages\P
+ython311\site-packages\requests
+\__init__.py:113: 
+RequestsDependencyWarning: 
+urllib3 (2.6.3) or chardet (7.4
+.0.post2)/charset_normalizer 
+(3.4.6) doesn't match a 
+supported version!
+At line:1 char:1
++ python bridge.py 2>&1 | 
+Out-File -FilePath 
+bridge_error.txt -Encoding ...
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          :  
+   NotSpecified: (C:\Users\AS  
+  US\A...ported version!:Str   
+ ing) [], RemoteException
+    + FullyQualifiedErrorId :  
+   NativeCommandError
+ 
+  warnings.warn(
+D:\Antigravity\ASL-Detection\br
+idge.py:17: 
+EventletDeprecationWarning: 
+Eventlet is deprecated. It is 
+currently being maintained in 
+bugfix mode, and
+we strongly recommend against 
+using it for new projects.
+
+If you are already using 
+Eventlet, we recommend 
+migrating to a different
+framework.  For more detail see
+https://eventlet.readthedocs.io
+/en/latest/asyncio/migration.ht
+ml
+
+  from eventlet import listen, 
+wsgi
+2026-04-15 13:15:18.283351: I t
+ensorflow/core/util/port.cc:153
+] oneDNN custom operations are 
+on. You may see slightly 
+different numerical results 
+due to floating-point 
+round-off errors from 
+different computation orders. 
+To turn them off, set the 
+environment variable 
+`TF_ENABLE_ONEDNN_OPTS=0`.
+2026-04-15 13:15:19.066950: I t
+ensorflow/core/util/port.cc:153
+] oneDNN custom operations are 
+on. You may see slightly 
+different numerical results 
+due to floating-point 
+round-off errors from 
+different computation orders. 
+To turn them off, set the 
+environment variable 
+`TF_ENABLE_ONEDNN_OPTS=0`.
+[Sync] Loaded 35 signs from synchronized map.
+Traceback (most recent call 
+last):
+  File "D:\Antigravity\ASL-Dete
+ction\bridge.py", line 22, in 
+<module>
+    from real_time_detection 
+import ASLInterpreter, 
+CameraStream
+ImportError: cannot import 
+name 'ASLInterpreter' from 
+'real_time_detection' (D:\Antig
+ravity\ASL-Detection\src\real_t
+ime_detection.py)

@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "name": "Zeeshan",
+    "email": "zk45681@gmail.com",
+    "password": "$2b$10$YYmkxabjU4CkA56P1dfi2.7fsSw0Q31lH/5zNEOQY2j5LAJHEbgoa",
+    "role": "admin"
+  },
+  {
+    "id": 1776247837988,
+    "name": "qwd",
+    "email": "3xgen5exxf@ruutukf.com",
+    "password": "$2b$10$jyIiBgAzMV6EvSan.axDa.//KDRJCnh5ytt98bomGdRjDtCsFBoTC",
+    "role": "user"
+  },
+  {
+    "id": 1776247920744,
+    "name": "Ziffy Star",
+    "email": "ziffystar06@gmail.com",
+    "googleId": "114955595426203022273",
+    "role": "user",
+    "image": "https://lh3.googleusercontent.com/a/ACg8ocJ2HRx-9sBN9sZSzx8gzLwnN3lVITI9zE2kHcftCRhsLxGkjw=s96-c"
+  }
+]
