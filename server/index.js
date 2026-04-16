@@ -21,7 +21,9 @@ const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  }
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'signbridge_elite_secret_2026';
@@ -105,7 +107,8 @@ app.post('/api/auth/google', async (req, res) => {
 app.post('/api/upload-video', upload.single('video'), (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'No video file uploaded' });
 
-    console.log(`[Server] Processing video: ${req.file.path}`);
+    const startFrame = req.body.startFrame ? parseInt(req.body.startFrame, 10) : 0;
+    console.log(`[Server] Processing video: ${req.file.path} (startFrame: ${startFrame})`);
     
     // Resolve absolute path to be sent to Python
     const absolutePath = path.resolve(req.file.path);
@@ -115,17 +118,20 @@ app.post('/api/upload-video', upload.single('video'), (req, res) => {
         message: 'Video uploaded successfully',
         filename: req.file.filename,
         path: req.file.path,
-        size: req.file.size
+        size: req.file.size,
+        startFrame: startFrame
     });
 
-    // Start video processing asynchronously
+    // Start video processing asynchronously with start position
     if (!pythonProcess) {
        pendingVideo = absolutePath;
+       pendingStartFrame = startFrame;
        startPythonBridge();
     } else if (pythonSocket && pythonReady) {
-       pythonSocket.emit("process_video", absolutePath);
+       pythonSocket.emit("process_video", { path: absolutePath, startFrame: startFrame });
     } else {
        pendingVideo = absolutePath;
+       pendingStartFrame = startFrame;
     }
 });
 
@@ -134,12 +140,32 @@ let pythonSocket = null;
 let pythonReady = false;
 let pendingStart = false;
 let pendingVideo = null;
+let pendingStartFrame = 0;
 
 // Session History State
 let sessionHistory = [];
 let currentSentenceId = 0;
 
 function startPythonBridge() {
+  console.log("[Server] Cleaning legacy ports...");
+  try {
+    const { execSync } = require('child_process');
+    if (process.platform === 'win32') {
+       // Search for process on 5001 and kill it
+       const output = execSync('netstat -ano | findstr :5001').toString();
+       const lines = output.split('\n');
+       for (const line of lines) {
+         if (line.includes('LISTENING')) {
+           const pid = line.trim().split(/\s+/).pop();
+           console.log(`[Server] Terminating zombie process on 5001 (PID: ${pid})`);
+           execSync(`taskkill /F /PID ${pid}`);
+         }
+       }
+    }
+  } catch (e) {
+    // Port might be clean already, ignore error
+  }
+
   console.log("[Server] Starting Python bridge...");
   pythonProcess = spawn("python", ["-u", "bridge.py"], {
     cwd: path.join(__dirname, '..'),
@@ -153,35 +179,55 @@ function startPythonBridge() {
   pythonProcess.stdout.on("data", (data) => {
     const output = data.toString();
     console.log(`[Python] ${output}`);
-    if (output.includes("Running on port")) {
-      setTimeout(connectToPython, 1000);
+    
+    // Immediate connection if bridge says it's ready
+    if (output.includes("Running on port 5001") || output.includes("initialized")) {
+      console.log("[Server] Sync Signal: Python bridge is ready. Connecting...");
+      setTimeout(connectToPython, 500);
     }
   });
 
-  pythonProcess.stderr.on("data", (data) => console.error(`[Python Error] ${data}`));
+  pythonProcess.stderr.on("data", (data) => {
+    const errorMsg = data.toString();
+    console.error(`[Python Error] ${errorMsg}`);
+    
+    if (errorMsg.includes("CRITICAL ERROR") || errorMsg.includes("ImportError")) {
+       console.error("[Server] DETECTED CRITICAL PYTHON FAILURE. Check bridge setup.");
+    }
+  });
 
   pythonProcess.on("close", (code) => {
     console.log(`[Server] Python bridge closed with code ${code}`);
     pythonReady = false;
     pythonSocket = null;
     pythonProcess = null;
+    // Only auto-restart on unexpected crash (not clean exit)
+    if (code !== 0 && code !== null) {
+      console.log("[Server] Bridge crashed — reconnecting to existing instance...");
+      setTimeout(connectToPython, 2000);
+    }
   });
 }
 
 function connectToPython() {
   if (pythonSocket) return;
   console.log("[Server] Connecting to Python bridge...");
-  pythonSocket = socketIoClient("http://127.0.0.1:5001", { transports: ["websocket"] });
+  pythonSocket = socketIoClient("http://127.0.0.1:5001", { 
+    transports: ["websocket", "polling"],
+    reconnection: true,
+    reconnectionAttempts: 10
+  });
 
   pythonSocket.on("connect", () => {
     console.log("[Server] Connected to Python bridge");
     pythonReady = true;
     
     if (pendingVideo) {
-      console.log(`[Server] Executing pending video processing: ${pendingVideo}`);
-      pythonSocket.emit("process_video", pendingVideo);
+      console.log(`[Server] Executing pending video processing: ${pendingVideo} (startFrame: ${pendingStartFrame})`);
+      pythonSocket.emit("process_video", { path: pendingVideo, startFrame: pendingStartFrame });
       pendingVideo = null;
-      pendingStart = false; // Override start stream if a video was pending
+      pendingStartFrame = 0;
+      pendingStart = false;
     } else if (pendingStart) {
       console.log("[Server] Executing pending stream start...");
       pythonSocket.emit("start_stream");
@@ -192,6 +238,10 @@ function connectToPython() {
   pythonSocket.on("disconnect", () => {
     console.log("[Server] Disconnected from Python bridge");
     pythonReady = false;
+  });
+
+pythonSocket.on("connect_error", (err) => {
+    console.log("[Server] Python connection error:", err.message);
   });
 
   pythonSocket.on("ai_result", (data) => {
@@ -224,17 +274,22 @@ function connectToPython() {
 io.on("connection", (socket) => {
   console.log("[Server] Client connected:", socket.id);
   socket.on("start_detection", () => {
+    console.log("[Server] Received start_detection");
     if (!pythonProcess) {
+       console.log("[Server] Python process not started, starting...");
        pendingStart = true;
        startPythonBridge();
     } else if (pythonSocket && pythonReady) {
+       console.log("[Server] Python ready, emitting start_stream");
        pythonSocket.emit("start_stream");
     } else {
+       console.log("[Server] Python not ready, setting pendingStart");
        pendingStart = true;
     }
     socket.emit("stream_status", { status: "active" });
   });
   socket.on("stop_detection", () => {
+    console.log("[Server] Received stop_detection");
     if (pythonSocket && pythonReady) pythonSocket.emit("stop_stream");
     socket.emit("stream_status", { status: "stopped" });
   });
@@ -260,6 +315,8 @@ io.on("connection", (socket) => {
     if (pythonSocket && pythonReady) pythonSocket.emit("manual_input", character);
   });
 });
+
+startPythonBridge();
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {

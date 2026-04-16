@@ -15,7 +15,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   // Dynamic API Base URL
-  const API_BASE = `http://${window.location.hostname}:5000`;
+  const API_BASE = import.meta.env.VITE_SERVER_URL || `http://${window.location.hostname}:3033`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,7 +44,7 @@ export default function Login() {
     } catch (err) {
       console.error('[Auth] Connection Error:', err);
       setError(err.message === 'Failed to fetch' 
-        ? 'Could not connect to the server. Please ensure the backend is running on port 5000.' 
+        ? 'Could not connect to the server. Please ensure the backend is running on port 3033.' 
         : err.message);
     } finally {
       setLoading(false);

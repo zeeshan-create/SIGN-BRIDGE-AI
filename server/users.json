@@ -20,5 +20,20 @@
     "googleId": "114955595426203022273",
     "role": "user",
     "image": "https://lh3.googleusercontent.com/a/ACg8ocJ2HRx-9sBN9sZSzx8gzLwnN3lVITI9zE2kHcftCRhsLxGkjw=s96-c"
+  },
+  {
+    "id": 1776276076073,
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "$2b$10$7oNLaXoYbBjMOCh6DUGvIuXOavavfQ6ZbviHbrF49/UUVzXCqwSdK",
+    "role": "user"
+  },
+  {
+    "id": 1776322906196,
+    "name": "DYNAMO ROCKSTARS",
+    "email": "rizwanhussain1912@gmail.com",
+    "googleId": "108136127129342240644",
+    "role": "user",
+    "image": "https://lh3.googleusercontent.com/a/ACg8ocK7vUC_vT32roX14SmSxUi37eFfaULhZdtzsHYKOXBwp4BXdETHsQ=s96-c"
   }
 ]

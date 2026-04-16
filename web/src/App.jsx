@@ -23,7 +23,7 @@ import { ThemeProvider } from './ThemeContext';
 import ErrorBoundary from './ErrorBoundary';
 
 // Connect to the Node.js backend
-const socket = io('http://127.0.0.1:5000');
+const socket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:3033');
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();

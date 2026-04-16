@@ -160,7 +160,7 @@ function Home() {
             <div className="hidden sm:block w-1.5 h-1.5 rounded-full bg-[#16A34A]/20" />
             <span className="hover:text-[#16A34A] transition-colors duration-500 cursor-default underline decoration-[#16A34A]/20 underline-offset-8">Understanding. One Sign at a Time.</span>
             <div className="hidden sm:block w-1.5 h-1.5 rounded-full bg-[#16A34A]/20" />
-            <span className="hover:text-[#16A34A] transition-colors duration-500 cursor-default text-emerald-600/50">ASL -> Text. Instantly.</span>
+            <span className="hover:text-[#16A34A] transition-colors duration-500 cursor-default text-emerald-600/50">ASL → Text. Instantly.</span>
           </div>
         </motion.div>
 

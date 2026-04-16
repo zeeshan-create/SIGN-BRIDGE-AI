@@ -149,10 +149,14 @@ function Dashboard({ socket, onBack }) {
   const [history, setHistory] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [startFrame, setStartFrame] = useState(0);
 
   useEffect(() => {
     socket.on('prediction', (data) => {
-      setImage(`data:image/jpeg;base64,${data.image}`);
+      console.log('[Dashboard] Received prediction:', data);
+      if (data.image) {
+        setImage(`data:image/jpeg;base64,${data.image}`);
+      }
       setDetection({
         sign: data.sign,
         sentence: data.sentence,
@@ -160,10 +164,17 @@ function Dashboard({ socket, onBack }) {
         fps: data.fps
       });
     });
-    socket.on('history_updated', (data) => setHistory(data));
+    socket.on('stream_status', (data) => {
+      console.log('[Dashboard] Stream status:', data);
+    });
+    socket.on('history_updated', (data) => {
+      console.log('[Dashboard] History updated:', data);
+      setHistory(data);
+    });
     socket.emit('get_history');
     return () => {
       socket.off('prediction');
+      socket.off('stream_status');
       socket.off('history_updated');
     };
   }, [socket]);
@@ -205,9 +216,11 @@ function Dashboard({ socket, onBack }) {
     setUploading(true);
     const formData = new FormData();
     formData.append('video', file);
+    formData.append('startFrame', startFrame.toString());
 
     try {
-      const response = await axios.post('http://localhost:5000/api/upload-video', formData, {
+      const API_BASE = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+      const response = await axios.post(`${API_BASE}/api/upload-video`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       console.log('[Dashboard] Video upload successful:', response.data);
@@ -317,11 +330,11 @@ function Dashboard({ socket, onBack }) {
                             <h4 className="text-2xl md:text-3xl font-black text-[var(--text-primary)]">98.4%</h4>
                          </div>
                       </div>
-                      <div className="flex items-center justify-center gap-3 text-[#16A34A] text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase bg-[#16A34A]/10 px-5 py-2.5 rounded-xl border border-[var(--border-color)]">
-                         <Target size={18} /> Neural Interpreter 4.0
-                      </div>
-                   </div>
-                </div>
+                       <div className="flex items-center justify-center gap-3 text-[#16A34A] text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase bg-[#16A34A]/10 px-5 py-2.5 rounded-xl border border-[var(--border-color)]">
+                          <Target size={18} /> Neural Interpreter 4.0
+                       </div>
+                    </div>
+                 </div>
               </motion.div>
             ) : activeTab === 'profile' ? (
                <Profile key="profile" />
@@ -335,42 +348,52 @@ function Dashboard({ socket, onBack }) {
               <motion.div key="interpreter" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col lg:flex-row gap-8 md:gap-10 lg:h-[78vh]">
                   {/* LEFT: Functional Vision Stream */}
                   <div className="flex-[5] flex flex-col gap-6 md:gap-8">
-                     <div className="aspect-video md:flex-1 bg-black border border-white/5 rounded-[2rem] md:rounded-[3rem] overflow-hidden relative group shadow-2xl">
-                        {active && image ? (
-                           <>
-                              <img src={image} className="w-full h-full object-cover" alt="Feed" style={{ willChange: 'transform', transform: 'translateZ(0)' }} />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-                           </>
-                        ) : (
-                           <div className="w-full h-full bg-[#052E16] flex items-center justify-center relative">
-                              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_white_1px,_transparent_1px)] bg-[size:40px_40px]" />
-                              <div className="text-center z-10 p-6">
-                                 <div className="w-16 h-16 md:w-24 md:h-24 bg-[#16A34A] text-white rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 border border-[#16A34A]/20 shadow-[0_0_50px_rgba(22,163,74,0.3)] animate-pulse">
-                                    <Video size={32} md:size={48} strokeWidth={1} />
-                                 </div>
-                                 <h3 className="text-lg md:text-2xl font-black text-white tracking-[0.15em] md:tracking-[0.2em] uppercase">Vision Core Standby</h3>
-                                 <p className="text-[#16A34A] text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] mt-3 md:mt-4">Initialize terminal to begin uplink</p>
-                              </div>
-                           </div>
-                        )}
+                      <div className="aspect-video md:flex-1 bg-black border border-white/5 rounded-[2rem] md:rounded-[3rem] overflow-hidden relative group shadow-2xl">
+                          {/* Floating Mode Controls */}
+                          <div className="absolute top-6 right-6 z-30 flex bg-black/60 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-2xl">
+                             <button 
+                               onClick={() => handleModeSwitch('ALPHABET')}
+                               className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${lexiconMode === 'ALPHABET' ? 'bg-[#16A34A] text-white shadow-lg shadow-emerald-500/20' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                             >
+                               Alphabet
+                             </button>
+                             <button 
+                               onClick={() => handleModeSwitch('WORDS')}
+                               className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${lexiconMode === 'WORDS' ? 'bg-[#16A34A] text-white shadow-lg shadow-emerald-500/20' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                             >
+                               Words
+                             </button>
+                          </div>
+                          {active ? (
+                            image ? (
+                            <>
+                               <img src={image} className="w-full h-full object-cover" alt="Feed" style={{ willChange: 'transform', transform: 'translateZ(0)' }} />
+                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                            </>
+                            ) : (
+                            <div className="w-full h-full bg-[#052E16] flex items-center justify-center">
+                               <div className="text-center z-10 p-6">
+                                  <div className="w-12 h-12 border-2 border-[#16A34A] border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
+                                  <p className="text-[#16A34A] text-xs font-black uppercase tracking-widest">Initializing Core...</p>
+                               </div>
+                            </div>
+                            )
+                         ) : (
+                             <div className="w-full h-full bg-[#052E16] flex items-center justify-center relative">
+                               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_white_1px,_transparent_1px)] bg-[size:40px_40px]" />
+                               <div className="text-center z-10 p-6">
+                                  <div className="w-16 h-16 md:w-24 md:h-24 bg-[#16A34A] text-white rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 border border-[#16A34A]/20 shadow-[0_0_50px_rgba(22,163,74,0.3)] animate-pulse">
+                                     <Video size={32} md:size={48} strokeWidth={1} />
+                                  </div>
+                                  <h3 className="text-lg md:text-2xl font-black text-white tracking-[0.15em] md:tracking-[0.2em] uppercase">Vision Core Standby</h3>
+                                  <p className="text-[#16A34A] text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] mt-3 md:mt-4">Initialize terminal to begin uplink</p>
+                               </div>
+                             </div>
+                          )}
+                       </div>
                         
-                        {/* Top Right Mini Controls */}
-                        <div className="absolute top-4 md:top-8 right-4 md:right-8 z-20 flex bg-black/40 backdrop-blur-xl p-1 rounded-xl md:rounded-2xl border border-white/10 shadow-2xl">
-                           <button 
-                             onClick={() => handleModeSwitch('ALPHABET')}
-                             className={`px-4 md:px-6 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all ${lexiconMode === 'ALPHABET' ? 'bg-[#16A34A] text-white' : 'text-white/40 hover:text-white'}`}
-                           >
-                             Alpha
-                           </button>
-                           <button 
-                             onClick={() => handleModeSwitch('WORDS')}
-                             className={`px-4 md:px-6 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all ${lexiconMode === 'WORDS' ? 'bg-[#16A34A] text-white' : 'text-white/40 hover:text-white'}`}
-                           >
-                             Words
-                           </button>
-                        </div>
 
-                         <div className="absolute bottom-6 md:bottom-12 left-6 md:left-10 z-20 w-[calc(100%-48px)] md:w-auto flex gap-4">
+                          <div className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 z-20 flex gap-4 w-max">
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
@@ -399,9 +422,18 @@ function Dashboard({ socket, onBack }) {
                               style={{ display: 'none' }}
                             />
                             <div id="video-upload-desc" style={{ display: 'none' }}>Select a video file to upload for American Sign Language detection</div>
+                            <input
+                              type="number"
+                              min="0"
+                              value={startFrame}
+                              onChange={(e) => setStartFrame(Math.max(0, parseInt(e.target.value) || 0))}
+                              placeholder="Start frame"
+                              className="w-20 md:w-24 px-3 py-4 md:py-5 rounded-2xl md:rounded-[2rem] bg-[var(--bg-secondary)] border border-[var(--border-color)] text-white text-xs md:text-sm font-black uppercase placeholder:text-white/30"
+                              aria-label="Start frame number"
+                            />
                          </div>
                      </div>
-                  </div>
+
 
                   {/* RIGHT / BOTTOM: High-End Neural HUD */}
                   <div className="flex-[2] flex flex-col gap-8 md:gap-10">
@@ -477,12 +509,12 @@ function Dashboard({ socket, onBack }) {
                                  </motion.div>
                               ))
                            )}
-                        </div>
-                     </div>
+                         </div>
+                      </div>
                   </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+               </motion.div>
+             )}
+           </AnimatePresence>
         </main>
       </div>
     </div>
